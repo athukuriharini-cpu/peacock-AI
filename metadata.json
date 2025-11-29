@@ -1,0 +1,7 @@
+{
+  "name": "Peacock AI",
+  "description": "A powerful AI-powered art generator. Create stunning visuals using Gemini Image models and brainstorm ideas with the real-time Live Audio API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
