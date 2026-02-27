@@ -1,14 +1,16 @@
 import React from 'react';
-import { Loader2, Trash2, Maximize2 } from 'lucide-react';
+import { Loader2, Trash2, Maximize2, Edit2, Sparkles } from 'lucide-react';
 import { ArtPanelData } from '../types';
 
 interface ArtPanelProps {
   data: ArtPanelData;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
+  onUpscale: (id: string) => void;
   index: number;
 }
 
-const ImagePanel: React.FC<ArtPanelProps> = ({ data, onDelete }) => {
+const ImagePanel: React.FC<ArtPanelProps> = ({ data, onDelete, onEdit, onUpscale }) => {
   return (
     <div className="group relative bg-studio-800 p-3 shadow-lg transform transition-all hover:scale-[1.01] hover:shadow-2xl rounded-xl border border-studio-700">
       
@@ -28,21 +30,38 @@ const ImagePanel: React.FC<ArtPanelProps> = ({ data, onDelete }) => {
         
         {/* Overlay controls */}
         {!data.isLoading && (
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
              <button 
               onClick={() => onDelete(data.id)}
-              className="p-3 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors backdrop-blur-sm"
+              className="p-2 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors backdrop-blur-sm"
               title="Delete Artwork"
             >
-              <Trash2 size={20} />
+              <Trash2 size={18} />
             </button>
+            
+            <button 
+              onClick={() => onEdit(data.id)}
+              className="p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors backdrop-blur-sm"
+              title="Edit Image"
+            >
+              <Edit2 size={18} />
+            </button>
+
+            <button 
+              onClick={() => onUpscale(data.id)}
+              className="p-2 bg-indigo-500/80 text-white rounded-full hover:bg-indigo-600 transition-colors backdrop-blur-sm"
+              title="Upscale / Refine"
+            >
+              <Sparkles size={18} />
+            </button>
+
             <a 
               href={data.imageUrl} 
               download={`peacock-ai-${data.id}.png`}
-              className="p-3 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors backdrop-blur-sm"
+              className="p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors backdrop-blur-sm"
               title="Download High Res"
             >
-              <Maximize2 size={20} />
+              <Maximize2 size={18} />
             </a>
           </div>
         )}

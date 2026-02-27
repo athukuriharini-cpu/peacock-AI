@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Layout, Settings, Image as ImageIcon, Sparkles, MessageSquare, Layers } from 'lucide-react';
 import ImagePanel from './components/ComicPanel';
 import LiveAssistant from './components/LiveAssistant';
-import { generateArtPanelImage } from './services/geminiService';
+import ImageEditor from './components/ImageEditor';
+import { generateArtPanelImage, upscaleImage } from './services/geminiService';
 import { ArtPanelData, GenerationSettings, AspectRatio } from './types';
 
 const App: React.FC = () => {
@@ -10,6 +11,9 @@ const App: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
+  
+  // Editing State
+  const [editingPanelId, setEditingPanelId] = useState<string | null>(null);
   
   // Settings
   const [settings, setSettings] = useState<GenerationSettings>({
@@ -80,6 +84,53 @@ const App: React.FC = () => {
     setPanels(panels.filter(p => p.id !== id));
   };
 
+  const handleEditPanel = (id: string) => {
+    setEditingPanelId(id);
+  };
+
+  const handleSaveEdit = (newImageUrl: string) => {
+    if (editingPanelId) {
+      setPanels(current => 
+        current.map(p => 
+          p.id === editingPanelId 
+            ? { ...p, imageUrl: newImageUrl } 
+            : p
+        )
+      );
+    }
+  };
+
+  const handleUpscalePanel = async (id: string) => {
+    const panel = panels.find(p => p.id === id);
+    if (!panel) return;
+
+    // Create a new panel for the upscale result
+    const newId = `${Date.now()}-upscale`;
+    const newPanel: ArtPanelData = {
+      id: newId,
+      prompt: `${panel.prompt} (Upscaled)`,
+      imageUrl: '',
+      isLoading: true
+    };
+
+    setPanels(current => [...current, newPanel]);
+
+    try {
+      const upscaledUrl = await upscaleImage(panel.imageUrl, panel.prompt);
+      setPanels(current => 
+        current.map(p => 
+          p.id === newId 
+            ? { ...p, imageUrl: upscaledUrl, isLoading: false } 
+            : p
+        )
+      );
+    } catch (error) {
+      console.error("Upscale failed:", error);
+      setPanels(current => current.filter(p => p.id !== newId));
+      alert("Failed to upscale image. Please try again.");
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -87,9 +138,18 @@ const App: React.FC = () => {
     }
   };
 
+  const activeEditingPanel = panels.find(p => p.id === editingPanelId);
+
   return (
     <div className="min-h-screen bg-studio-900 text-white font-sans flex flex-col md:flex-row">
       
+      <ImageEditor 
+        isOpen={!!editingPanelId}
+        imageUrl={activeEditingPanel?.imageUrl || ''}
+        onClose={() => setEditingPanelId(null)}
+        onSave={handleSaveEdit}
+      />
+
       {/* Sidebar / Settings */}
       <aside className="w-full md:w-80 bg-studio-800 border-r border-studio-700 p-6 flex flex-col gap-8 flex-shrink-0 z-20 shadow-2xl">
         <div className="flex items-center gap-3 text-studio-accent">
@@ -183,6 +243,8 @@ const App: React.FC = () => {
                   data={panel} 
                   index={index}
                   onDelete={handleDeletePanel}
+                  onEdit={handleEditPanel}
+                  onUpscale={handleUpscalePanel}
                 />
               ))}
               <div ref={panelsEndRef} />
